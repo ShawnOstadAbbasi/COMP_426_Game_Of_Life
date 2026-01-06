@@ -18,6 +18,8 @@ const int numSpecies = 10;
 struct Pixel { float r, g, b;};
 
 Pixel Display[HEIGHT][WIDTH];
+int8_t foregroundArray[HEIGHT][WIDTH];
+int8_t backgroundArray[HEIGHT][WIDTH];
 
 const int8_t offsets[8][2] = {
     {-1,  0},  // up
@@ -86,9 +88,7 @@ int check(int8_t foreground[][WIDTH], int8_t background[][WIDTH], int numRows, i
     int cellStatus = foreground[row][col];
     int neighborCount = 0;
     bool isDead = false;
-    //std::unordered_map<int, int> speciesCounter;
     int8_t speciesCounter[numSpecies] = {0};
-    //std::vector<int> threeCount;
 
     int testRow;
     int testCol;
@@ -104,11 +104,6 @@ int check(int8_t foreground[][WIDTH], int8_t background[][WIDTH], int numRows, i
             if (cellStatus != deadID && foreground[testRow][testCol] == cellStatus)
                 neighborCount++;
             else if (cellStatus == deadID){
-                // if (!speciesCounter.count(arr[testRow][testCol]) && arr[testRow][testCol] != deadID)
-                //     speciesCounter.insert(std::make_pair(arr[testRow][testCol], 1));
-                // else if (speciesCounter.count(arr[testRow][testCol]) && arr[testRow][testCol] != deadID)
-                //     speciesCounter[arr[testRow][testCol]]++;
-
                 int neighbor = foreground[testRow][testCol];
                 if (neighbor != deadID)
                     speciesCounter[neighbor]++;
@@ -116,21 +111,8 @@ int check(int8_t foreground[][WIDTH], int8_t background[][WIDTH], int numRows, i
         }
     }
 
-    // Here we can maybe check the count for all the neighboring colors
-    // And if the count is 3 for some color and current pixel is dead
-    // we change the color of the pixel to that one 
-    // Then in the decide function we check the count and if its dead
     if (isDead){
-        // Check to see if any of neighboring species are 3
-        // for (const auto& pair : speciesCounter) {
-        //     if (pair.second == 3) 
-        //         threeCount.push_back(pair.first);
-        // }
-
-        // if (threeCount.size()){
-        //     arr2[row][col] = threeCount[rand() % (threeCount.size())];
-        // }
-        int candidates[10];
+        int candidates[numSpecies];
         int candidateCount = 0;
         for (int s = 0; s < numSpecies; s++) {
             if (speciesCounter[s] == 3)
@@ -175,16 +157,15 @@ void numToColorMapping(int8_t background[][WIDTH], int numCols, int rowStart, in
 }
 
 int main(){
+    std::cout << "HELLO" << std::endl;
     using clock = std::chrono::high_resolution_clock;
     srand(static_cast<unsigned>(time(0)));
-    int8_t foregroundArray[HEIGHT][WIDTH];
-    int8_t backgroundArray[HEIGHT][WIDTH];
+    // int8_t foregroundArray[HEIGHT][WIDTH];
+    // int8_t backgroundArray[HEIGHT][WIDTH];
 
     constexpr int rows = sizeof(foregroundArray) / sizeof(foregroundArray[0]);
     constexpr int cols = sizeof(foregroundArray[0]) / sizeof(foregroundArray[0][0]);
 
-    // Num of threads == to # of cores apparently good
-    // (not sure if this is still true for single core multithreading)
     int numThreads = 8;
     int rowsPerThread = rows / numThreads;
 
@@ -199,7 +180,7 @@ int main(){
     std::vector<std::thread> threads;
 
 
-    // Could use data parallelism for initialization and copying as well
+    // Set original values for the foregeound
     for (int i = 0; i < HEIGHT; i++){
         for (int j = 0; j < WIDTH; j++){
             foregroundArray[i][j] = rand() % numSpecies;
@@ -232,6 +213,7 @@ int main(){
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Game of Life", nullptr, nullptr);
     if (!window) { glfwTerminate(); return -1; }
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(0);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD\n";
@@ -325,7 +307,7 @@ int main(){
             th.join();
         threads.clear();
 
-        std::swap(foreground,background);  // swap pointers, O(1)
+        std::swap(foreground,background);
 
 
         // Upate texture and upload to GPU
