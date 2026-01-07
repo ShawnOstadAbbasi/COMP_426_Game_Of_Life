@@ -157,7 +157,6 @@ void numToColorMapping(int8_t background[][WIDTH], int numCols, int rowStart, in
 }
 
 int main(){
-    std::cout << "HELLO" << std::endl;
     using clock = std::chrono::high_resolution_clock;
     srand(static_cast<unsigned>(time(0)));
     // int8_t foregroundArray[HEIGHT][WIDTH];
