@@ -72,7 +72,7 @@ int main(){
         background[i] = new int8_t[WIDTH];
     }
 
-    // Initialize our buffers with random values
+    // Initialize our foreground with random values
     for (int row = 0; row < HEIGHT; row++){
         for (int col = 0; col < WIDTH; col++){
             foreground[row][col] = rand() % numSpecies;
@@ -92,7 +92,7 @@ int main(){
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Game of Life", nullptr, nullptr);
     if (!window) { glfwTerminate(); return -1; }
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD\n";
@@ -167,7 +167,7 @@ int main(){
         CheckArrayParallel(foreground, background, numSpecies);
         ColorMappingParallel(background, display);
 
-        std::swap(foreground,background);  // swap foreground and background pointers to continue processing without copying data
+        std::swap(foreground,background);
 
         // Upate texture and upload to GPU
         glBindTexture(GL_TEXTURE_2D, tex);
@@ -207,8 +207,6 @@ int main(){
     }
     delete [] foreground;
     delete [] background;
-
-    std::cout << "-----DONE-----" << std::endl;
 
     return 0;
 }

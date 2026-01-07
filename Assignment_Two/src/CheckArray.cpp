@@ -2,7 +2,7 @@
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range2d.h>
 #include <iostream>
-#include <cstdlib>  // for rand()
+#include <cstdlib>
 using namespace tbb;
 
 const int MaxNumSpecies = 10;
@@ -16,7 +16,6 @@ void CheckArray::operator()(const blocked_range2d<int> &r) const {
             int cellStatus = *(*(foreground + row) + col);
             int neighborCount = 0;
             bool isDead = false;
-            // int8_t* speciesCounter = new int8_t[numSpecies]();
             int speciesCounter[MaxNumSpecies] = {0};
 
             int testRow;
@@ -41,7 +40,6 @@ void CheckArray::operator()(const blocked_range2d<int> &r) const {
             }
                     
             if (isDead){
-                // int candidates[numSpecies];
                 int candidates[MaxNumSpecies] = {0};
                 int candidateCount = 0;
 
@@ -60,7 +58,6 @@ void CheckArray::operator()(const blocked_range2d<int> &r) const {
                 else
                     background[row][col] = foreground[row][col]; // to correct buffering
             }
-            // delete [] speciesCounter;
         }
     }
 }
