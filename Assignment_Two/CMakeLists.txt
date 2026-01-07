@@ -48,4 +48,23 @@ elseif(WIN32)
         opengl32
     )
 
+    set(TBB_DLL "${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/library/Windows/tbb12.dll")
+    set(GLFW3_DLL "${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/library/Windows/glfw3.dll")
+    
+    # copy the tbb dll to the same folder as our executable
+    add_custom_command(
+        TARGET app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${TBB_DLL}"
+            # Use a generator expression to get the correct output directory for any configuration
+            "$<TARGET_FILE_DIR:app>/tbb12.dll"
+    )
+    add_custom_command(
+        TARGET app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${GLFW3_DLL}"
+            # Use a generator expression to get the correct output directory for any configuration
+            "$<TARGET_FILE_DIR:app>/glfw3.dll"
+    )
+
 endif()
