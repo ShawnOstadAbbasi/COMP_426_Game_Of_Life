@@ -42,7 +42,6 @@ elseif(WIN32)
     # Link actual libraries
     target_link_libraries(app
         glfw3dll
-        #glfw3_mt
         glew32s
         opengl32
     )
