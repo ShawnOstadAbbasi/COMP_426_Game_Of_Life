@@ -41,12 +41,20 @@ elseif(WIN32)
 
     # Link actual libraries
     target_link_libraries(app
-        #glfw3dll
-        glfw3_mt
+        glfw3dll
+        #glfw3_mt
         glew32s
         opengl32
     )
 
-    
+    set(GLFW3_DLL "${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/library/Windows/glfw3.dll")
+
+    # Copy the dll to same directory as executable
+    add_custom_command(
+        TARGET app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${GLFW3_DLL}"
+            "$<TARGET_FILE_DIR:app>/glfw3.dll"
+    )
 
 endif()
