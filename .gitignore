@@ -2,6 +2,10 @@
 .vscode/
 .DS_Store
 Assignment_One/build/*
+!Assignment_One/build/.gitkeep
 Assignment_Two/build/*
+!Assignment_Two/build/.gitkeep
 Assignment_Three/build/*
+!Assignment_Three/build/.gitkeep
 Assignment_Four/build/*
+!Assignment_Four/build/.gitkeep
