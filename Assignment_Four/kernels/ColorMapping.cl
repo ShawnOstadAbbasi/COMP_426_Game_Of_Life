@@ -28,13 +28,12 @@ __kernel void ColorMapping(
     float4 color = (float4)(0.0f, 0.0f, 0.0f, 1.0f);
 
     if ((int)background[row * numCols + col] != -1)
-        //color = colorMapping[(int)background[row * numCols + col]];
         color = (float4)(
             colorMapping[(int)background[row * numCols + col]].r,
             colorMapping[(int)background[row * numCols + col]].g,
             colorMapping[(int)background[row * numCols + col]].b,
             1.0f 
-            );
+        );
     
     // Write the color to the texture
     write_imagef(tex, pos, color);
