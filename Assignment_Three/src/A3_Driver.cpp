@@ -5,7 +5,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
-#include <cstdlib>  // for rand()
+#include <cstdlib>
 #include <ctime>
 #include <utility>
 #include <chrono>
@@ -23,6 +23,8 @@ const int WIDTH = 1024;
 const int HEIGHT = 768;
 const int SubMatrixSize = 64;
 Pixel display[HEIGHT * WIDTH];
+int8_t foreground[HEIGHT * WIDTH];
+int8_t background[HEIGHT * WIDTH];
 
 const Pixel colorMapping[10] = {
     {1.0f, 0.0f, 0.0f},     // 0 = Red
@@ -79,26 +81,6 @@ std::string loadFile(const std::string& path) {
 }
 
 int main(){
-    using clock = std::chrono::high_resolution_clock;
-    srand(static_cast<unsigned>(time(0)));
-    
-    int8_t numSpecies = 5 + rand() % 6;
-    int8_t foreground[HEIGHT * WIDTH];
-    int8_t background[HEIGHT * WIDTH];
-
-    int frames = 0;
-    double fps = 0.0;
-    int randomNum = rand();
-
-    // Initialize our buffers with random values
-    for (int row = 0; row < HEIGHT; row++){
-        for (int col = 0; col < WIDTH; col++){
-            foreground[row * WIDTH + col] = rand() % numSpecies;
-            background[row * WIDTH + col] = foreground[row * WIDTH + col];
-        }
-    }
-
-
     cl_device_id device;
     cl_context context;
     cl_command_queue queue;
@@ -112,12 +94,82 @@ int main(){
     size_t szGlobalWorkSize[2] = {HEIGHT, WIDTH}; // Global # of work items
     size_t szLocalWorkSize[2] = {1,1}; // # of Work Items in Work Group
     cl_event checkArrayEvent;
-    cl_event colorMappingEvent;
+    cl_platform_id selectedPlatform = nullptr;
+
+    using clock = std::chrono::high_resolution_clock;
+    srand(static_cast<unsigned>(time(0)));
+    
+    int8_t numSpecies = 5 + rand() % 6;
+    // int8_t foreground[HEIGHT * WIDTH];
+    // int8_t background[HEIGHT * WIDTH];
+
+    int frames = 0;
+    double fps = 0.0;
+    int randomNum = rand();
+
+    // Initialize our buffers with random values
+    for (int row = 0; row < HEIGHT; row++){
+        for (int col = 0; col < WIDTH; col++){
+            foreground[row * WIDTH + col] = rand() % numSpecies;
+            background[row * WIDTH + col] = foreground[row * WIDTH + col];
+        }
+    }
+
+    // Display available OpenCL devices
+    cl_uint numPlatforms1;
+    clGetPlatformIDs(0, NULL, &numPlatforms1);
+    std::vector<cl_platform_id> platforms1(numPlatforms1);
+    clGetPlatformIDs(numPlatforms1, platforms1.data(), NULL);
+    for (auto& platform : platforms1) {
+        cl_uint numDevices;
+        clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &numDevices);
+
+        std::cout << "Platform has " << numDevices << " device(s)\n";
+
+        std::vector<cl_device_id> devs(numDevices);
+        clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, numDevices, devs.data(), NULL);
+
+        for (auto& d : devs) {
+            char name[256];
+            clGetDeviceInfo(d, CL_DEVICE_NAME, sizeof(name), name, NULL);
+            std::cout << "  Device: " << name << "\n";
+        }
+    }
 
     // Setup OpenCL
-    clGetDeviceIDs(NULL, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
-    context = clCreateContext(NULL, 1, &device, NULL, NULL, NULL);
-    queue = clCreateCommandQueue(context, device, (cl_command_queue_properties)0, NULL);
+    cl_uint numPlatforms = 0;
+    clGetPlatformIDs(0, nullptr, &numPlatforms);
+
+    std::vector<cl_platform_id> platforms(numPlatforms);
+    clGetPlatformIDs(numPlatforms, platforms.data(), nullptr);
+    for (auto platform : platforms) {
+        ciErrNum = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
+        if (ciErrNum == CL_SUCCESS) {
+            selectedPlatform = platform;
+            break;
+        }
+        if (ciErrNum != CL_DEVICE_NOT_FOUND) {
+            std::cerr << "clGetDeviceIDs error: " << ciErrNum << "\n";
+        }
+    }
+
+    cl_context_properties props[] = {
+        CL_CONTEXT_PLATFORM,
+        (cl_context_properties)selectedPlatform,
+        0
+    };
+    context = clCreateContext(props, 1, &device, NULL, NULL, &ciErrNum);
+
+    // clGetDeviceIDs(NULL, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
+    // context = clCreateContext(NULL, 1, &device, NULL, NULL, &ciErrNum);
+    // if(ciErrNum != CL_SUCCESS) {
+    //     std::cerr << "Failed to create OpenCL context\n";
+    // }
+
+    queue = clCreateCommandQueue(context, device, (cl_command_queue_properties)0, &ciErrNum);
+    if(ciErrNum != CL_SUCCESS) {
+        std::cerr << "Failed to create device queue\n";
+    }
 
     // Create our buffers
     clForeground = clCreateBuffer(context,
@@ -136,26 +188,6 @@ int main(){
     if(ciErrNum != CL_SUCCESS) {
         std::cerr << "Failed to create OpenCL buffer from background\n";
     }
-    // clDisplay = clCreateFromGLTexture(
-    //     context,          // Your OpenCL context
-    //     CL_MEM_READ_WRITE,  // Kernel will read/write
-    //     GL_TEXTURE_2D,      // Target type
-    //     0,                  // Mipmap level
-    //     tex,                // OpenGL texture ID
-    //     &ciErrNum
-    // );
-    // 3. Create OpenCL buffer from OpenGL VBO
-    // cl_mem cl_vbo = clCreateFromGLBuffer(
-    //     context, 
-    //     CL_MEM_READ_WRITE, 
-    //     VBO, 
-    //     &ciErrNum
-    // );
-    // cl_image gcl_gl_create_image_from_texture(
-    //         GLenum texture_target,
-    //         GLint mip_level,
-    //         GLuint texture
-    // );
     clDisplay = clCreateBuffer(context,
         CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
         WIDTH * HEIGHT * sizeof(Pixel),
@@ -257,7 +289,7 @@ int main(){
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Game of Life", nullptr, nullptr);
     if (!window) { glfwTerminate(); return -1; }
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD\n";
@@ -337,14 +369,13 @@ int main(){
         }
         std::swap(clBackground, clForeground);
 
-         // Set kernel arguments
+        // Set kernel arguments
         randomNum = rand();
         ciErrNum = clSetKernelArg(CheckArrayKernel, 4, sizeof(int), &randomNum);
         ciErrNum = clSetKernelArg(CheckArrayKernel, 0, sizeof(cl_mem), &clForeground);
         ciErrNum = clSetKernelArg(CheckArrayKernel, 1, sizeof(cl_mem), &clBackground);
         ciErrNum = clSetKernelArg(ColorMappingKernel, 0, sizeof(cl_mem), &clBackground);
         ciErrNum = clSetKernelArg(ColorMappingKernel, 1, sizeof(cl_mem), &clDisplay);
-
 
         // Upate texture and upload to GPU
         glBindTexture(GL_TEXTURE_2D, tex);
@@ -357,11 +388,10 @@ int main(){
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-
         frames++;
         auto now = clock::now();
         std::chrono::duration<double> elapsed = now - lastTime;
-        if (elapsed.count() >= 1.0) { // every 1 second
+        if (elapsed.count() >= 1.0) {
             fps = frames / elapsed.count();
             std::cout << "FPS: " << fps << std::endl;
 
@@ -380,15 +410,11 @@ int main(){
     clReleaseCommandQueue(queue);
     clReleaseContext(context);
 
-
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
     glDeleteTextures(1, &tex);
 
     glfwTerminate();
-
-    std::cout << "-----DONE-----" << std::endl;
-
     return 0;
 }
