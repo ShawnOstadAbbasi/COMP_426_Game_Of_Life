@@ -1,4 +1,5 @@
 # Comp 426 Multicore Programming Project
+
 ## 1. Description
 The goal of this project was to recreate the "Game of Life Simulation" using ***multicore programming paradignms for enhanced computation*** as well as ***OpenGL for rendering*** on an array/window of size 1024x768. There are four iterations of this project, all of which demonstrate different forms of parallelization and optimizations with the goal of maximizing computation while maintaining correctness. ***Performance is measured in achievable frmaes per second (FPS)***
 ## Assignment 1 (STD Threads)
@@ -15,3 +16,30 @@ The final optimizations made to the iterative project was to obtain interoperabi
 While most of the necessary libraries and headers are provided in the dependencies folder there _may_ be additional necessary downloads.
 * [Intel OpenCL Runtime](https://www.intel.com/content/www/us/en/developer/articles/tool/opencl-drivers.html)
 * [Intel Threading Building Blocks](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onetbb.html)
+
+## 3. How to Compile and Execute
+To Compile and execute an iteration of the project, go into the build folder of the respective assignment. For this project, CMake was used as a build system.
+### NOTE: Assignment 3 and 4 may not work on MacOS, due to OpenCL being deprecated and replaced by Apple with Metal
+### To compile on ***Windows*** using ***CMake***
+1. Using a terminal go to the build folder of the respecitve assignment/iteration you would like to compile
+2. Then enter the following 
+```
+cmake ..
+``` 
+3. Then enter the following
+```
+cmake --build .
+```
+4. To execute the program, enter the build folder, then the Debug folder, and run the app.exe
+
+### To compile on on ***MacOS*** using ***CMake***
+1. Using a terminal go to the build folder of the respecitve assignment/iteration you would like to compile
+2. Then enter the following 
+```
+cmake ..
+``` 
+3. Then enter the following
+```
+make
+```
+4. To execute the program, enter the build folder, and run the app executable
